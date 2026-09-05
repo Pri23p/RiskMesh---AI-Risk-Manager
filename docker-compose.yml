@@ -1,0 +1,74 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: risksentinel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-risksentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-risksentinel_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-risksentinel_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-risksentinel} -d ${POSTGRES_DB:-risksentinel_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - risksentinel-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: risksentinel-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - risksentinel-network
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.1.8
+    container_name: risksentinel-redpanda
+    restart: unless-stopped
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://127.0.0.1:9092
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true' || exit 0"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - risksentinel-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  redpanda_data:
+    driver: local
+
+networks:
+  risksentinel-network:
+    driver: bridge
+
+

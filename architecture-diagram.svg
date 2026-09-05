@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">RiskMesh architecture block diagram</title>
+  <desc id="desc">Visual block diagram showing client, application, intelligence, data, and event layers.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .bg { fill: #090d18; }
+      .layer { fill: #111827; stroke: #334155; stroke-width: 2; rx: 14; }
+      .box { fill: #172033; stroke: #475569; stroke-width: 2; rx: 10; }
+      .client { stroke: #06b6d4; }
+      .app { stroke: #22c55e; }
+      .intel { stroke: #a78bfa; }
+      .data { stroke: #f59e0b; }
+      .event { stroke: #f43f5e; }
+      .heading { fill: #f8fafc; font: 700 20px Arial, sans-serif; }
+      .label { fill: #e2e8f0; font: 600 16px Arial, sans-serif; }
+      .sub { fill: #94a3b8; font: 400 13px Arial, sans-serif; }
+      .line { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="760"/>
+  <text x="60" y="52" class="heading" font-size="28">RiskMesh | AI Fraud Risk &amp; Loss Prevention</text>
+
+  <rect class="layer client" x="40" y="90" width="220" height="600"/>
+  <text x="62" y="128" class="heading">CLIENT</text>
+  <rect class="box client" x="62" y="160" width="176" height="100"/>
+  <text x="150" y="201" text-anchor="middle" class="label">React Dashboard</text>
+  <text x="150" y="225" text-anchor="middle" class="sub">Risk, review, analytics</text>
+  <rect class="box client" x="62" y="300" width="176" height="100"/>
+  <text x="150" y="341" text-anchor="middle" class="label">Merchant API</text>
+  <text x="150" y="365" text-anchor="middle" class="sub">REST / webhooks</text>
+
+  <rect class="layer app" x="300" y="90" width="250" height="600"/>
+  <text x="322" y="128" class="heading">APPLICATION</text>
+  <rect class="box app" x="322" y="160" width="206" height="76"/>
+  <text x="425" y="205" text-anchor="middle" class="label">Fastify Gateway</text>
+  <rect class="box app" x="322" y="260" width="206" height="76"/>
+  <text x="425" y="305" text-anchor="middle" class="label">Transaction Service</text>
+  <rect class="box app" x="322" y="360" width="206" height="76"/>
+  <text x="425" y="405" text-anchor="middle" class="label">Risk Decision + Saga</text>
+  <rect class="box app" x="322" y="460" width="206" height="76"/>
+  <text x="425" y="505" text-anchor="middle" class="label">Manual Review</text>
+  <rect class="box app" x="322" y="560" width="206" height="76"/>
+  <text x="425" y="605" text-anchor="middle" class="label">Audit Service</text>
+
+  <rect class="layer intel" x="590" y="90" width="270" height="600"/>
+  <text x="612" y="128" class="heading">INTELLIGENCE</text>
+  <rect class="box intel" x="612" y="160" width="226" height="76"/>
+  <text x="725" y="205" text-anchor="middle" class="label">Feature Generator</text>
+  <rect class="box intel" x="612" y="260" width="226" height="76"/>
+  <text x="725" y="305" text-anchor="middle" class="label">XGBoost ML Service</text>
+  <rect class="box intel" x="612" y="360" width="226" height="76"/>
+  <text x="725" y="405" text-anchor="middle" class="label">SHAP Explainability</text>
+  <rect class="box intel" x="612" y="460" width="226" height="76"/>
+  <text x="725" y="505" text-anchor="middle" class="label">Fraud Network Graph</text>
+  <rect class="box intel" x="612" y="560" width="226" height="76"/>
+  <text x="725" y="605" text-anchor="middle" class="label">Deterministic Rules</text>
+
+  <rect class="layer data" x="900" y="90" width="210" height="600"/>
+  <text x="922" y="128" class="heading">DATA</text>
+  <rect class="box data" x="922" y="190" width="166" height="90"/>
+  <text x="1005" y="230" text-anchor="middle" class="label">PostgreSQL</text>
+  <text x="1005" y="252" text-anchor="middle" class="sub">Source of truth</text>
+  <rect class="box data" x="922" y="340" width="166" height="90"/>
+  <text x="1005" y="380" text-anchor="middle" class="label">Redis</text>
+  <text x="1005" y="402" text-anchor="middle" class="sub">Cache + limits</text>
+  <rect class="box data" x="922" y="490" width="166" height="90"/>
+  <text x="1005" y="530" text-anchor="middle" class="label">Outbox</text>
+  <text x="1005" y="552" text-anchor="middle" class="sub">Reliable events</text>
+
+  <rect class="layer event" x="1150" y="90" width="210" height="600"/>
+  <text x="1172" y="128" class="heading">EVENTS</text>
+  <rect class="box event" x="1172" y="240" width="166" height="90"/>
+  <text x="1255" y="280" text-anchor="middle" class="label">Redpanda / Kafka</text>
+  <text x="1255" y="302" text-anchor="middle" class="sub">Durable stream</text>
+  <rect class="box event" x="1172" y="410" width="166" height="90"/>
+  <text x="1255" y="450" text-anchor="middle" class="label">Consumers</text>
+  <text x="1255" y="472" text-anchor="middle" class="sub">Audit + analytics</text>
+
+  <path class="line" d="M238 210 L322 198"/><path class="line" d="M238 350 L322 198"/>
+  <path class="line" d="M528 298 L612 198"/><path class="line" d="M528 398 L612 298"/>
+  <path class="line" d="M725 336 L725 360"/><path class="line" d="M725 436 L725 460"/>
+  <path class="line" d="M838 598 L922 235"/><path class="line" d="M528 498 L922 385"/>
+  <path class="line" d="M838 598 L922 535"/><path class="line" d="M1088 535 L1172 285"/>
+  <path class="line" d="M1255 330 L1255 410"/><path class="line" d="M1172 455 L1088 535"/>
+</svg>

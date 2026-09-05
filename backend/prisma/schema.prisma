@@ -1,0 +1,273 @@
+// Prisma Schema for RiskSentinel - AI Fraud Risk & Loss Prevention Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REVIEW
+  BLOCKED
+}
+
+enum DecisionAction {
+  APPROVE
+  REVIEW
+  BLOCK
+}
+
+enum RuleAction {
+  APPROVE
+  REVIEW
+  BLOCK
+}
+
+enum VerificationStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+model Customer {
+  id                 String        @id @default(uuid())
+  externalCustomerId String        @unique @map("external_customer_id")
+  accountAge         Int           @default(0) @map("account_age") // in days
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  transactions       Transaction[]
+
+  @@index([externalCustomerId])
+  @@map("customers")
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  transactionId String            @unique @map("transaction_id")
+  customerId    String            @map("customer_id")
+  amount        Decimal           @db.Decimal(12, 2)
+  currency      String            @db.VarChar(3)
+  deviceId      String?           @map("device_id")
+  ipAddress     String?           @map("ip_address")
+  location      String?
+  paymentMethod String            @map("payment_method")
+  status        TransactionStatus @default(PENDING)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  customer      Customer          @relation(fields: [customerId], references: [externalCustomerId], onDelete: Restrict)
+  riskScore     RiskScore?
+  riskDecision  RiskDecision?
+  verificationCase VerificationCase?
+
+  @@index([transactionId])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model RiskScore {
+  id               String        @id @default(uuid())
+  transactionId    String        @unique @map("transaction_id")
+  fraudProbability Float         @map("fraud_probability")
+  riskScore        Int           @map("risk_score") // 0 - 100 normalized score
+  modelVersion     String        @map("model_version")
+  status           String        @default("COMPLETED") // COMPLETED | FAILED
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  transaction      Transaction   @relation(fields: [transactionId], references: [transactionId], onDelete: Cascade)
+  factors          RiskFactor[]
+  riskDecision     RiskDecision?
+
+  @@index([transactionId])
+  @@index([riskScore])
+  @@index([createdAt])
+  @@map("risk_scores")
+}
+
+model RiskFactor {
+  id          String    @id @default(uuid())
+  riskScoreId String    @map("risk_score_id")
+  feature     String
+  impact      String    // high, medium, low
+  explanation String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  riskScore   RiskScore @relation(fields: [riskScoreId], references: [id], onDelete: Cascade)
+
+  @@index([riskScoreId])
+  @@map("risk_factors")
+}
+
+model RiskDecision {
+  id            String         @id @default(uuid())
+  transactionId String         @unique @map("transaction_id")
+  riskScoreId   String         @unique @map("risk_score_id")
+  decision      DecisionAction
+  reason        String
+  expectedLoss  Decimal        @db.Decimal(12, 2) @map("expected_loss")
+  status        String         @default("ACTIVE") // ACTIVE | OVERRIDDEN
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  transaction   Transaction    @relation(fields: [transactionId], references: [transactionId], onDelete: Cascade)
+  riskScore     RiskScore      @relation(fields: [riskScoreId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([decision])
+  @@index([createdAt])
+  @@map("risk_decisions")
+}
+
+model AuditEvent {
+  id         String   @id @default(uuid())
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id")
+  eventType  String   @map("event_type") @db.VarChar(50)
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+model IdempotencyRecord {
+  id           String    @id @default(uuid())
+  key          String    @unique
+  targetPath   String    @map("target_path")
+  requestHash  String?   @map("request_hash")
+  statusCode   Int       @map("status_code")
+  responseBody Json      @map("response_body")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  expiresAt    DateTime? @map("expires_at")
+
+  @@index([key])
+  @@map("idempotency_records")
+}
+
+model FraudRule {
+  id          String     @id @default(uuid())
+  code        String     @unique @db.VarChar(50)
+  name        String     @db.VarChar(100)
+  description String?
+  conditions  Json       // Rule condition AST / logic definition
+  action      RuleAction @default(REVIEW)
+  priority    Int        @default(100)
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@index([isActive, priority])
+  @@map("fraud_rules")
+}
+
+model VerificationCase {
+  id            String             @id @default(uuid())
+  transactionId String             @unique @map("transaction_id")
+  status        VerificationStatus @default(OPEN)
+  assignedTo    String?            @map("assigned_to")
+  decisionNotes String?            @map("decision_notes")
+  resolvedAt    DateTime?          @map("resolved_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  transaction   Transaction        @relation(fields: [transactionId], references: [transactionId], onDelete: Cascade)
+
+  @@index([status])
+  @@index([assignedTo])
+  @@map("verification_cases")
+}
+
+model AnalyticsMetric {
+  id         String   @id @default(uuid())
+  metricName String   @map("metric_name") @db.VarChar(100)
+  merchantId String?  @map("merchant_id")
+  dimensions Json?
+  value      Float
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  @@index([metricName, recordedAt])
+  @@index([merchantId])
+  @@map("analytics_metrics")
+}
+
+enum OutboxStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+model OutboxEvent {
+  id            String       @id @default(uuid())
+  eventType     String       @map("event_type") @db.VarChar(100)
+  aggregateType String       @map("aggregate_type") @db.VarChar(50)
+  aggregateId   String       @map("aggregate_id")
+  payload       Json
+  status        OutboxStatus @default(PENDING)
+  retryCount    Int          @default(0) @map("retry_count")
+  lastError     String?      @map("last_error")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  publishedAt   DateTime?    @map("published_at")
+
+  @@index([status, createdAt])
+  @@index([aggregateType, aggregateId])
+  @@index([eventType])
+  @@map("outbox_events")
+}
+
+enum SagaState {
+  PENDING
+  RUNNING
+  FAILED
+  COMPLETED
+  CANCELLED
+}
+
+model RiskDecisionSaga {
+  id            String       @id @default(uuid())
+  transactionId String       @unique @map("transaction_id")
+  state         SagaState    @default(PENDING)
+  currentStep   String       @default("START") @map("current_step")
+  context       Json         @default("{}")
+  retryCount    Int          @default(0) @map("retry_count")
+  lastError     String?      @map("last_error")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  completedAt   DateTime?    @map("completed_at")
+
+  stepLogs      SagaStepLog[]
+
+  @@index([transactionId])
+  @@index([state])
+  @@index([currentStep])
+  @@map("risk_decision_sagas")
+}
+
+model SagaStepLog {
+  id        String           @id @default(uuid())
+  sagaId    String           @map("saga_id")
+  stepName  String           @map("step_name")
+  state     String           // STARTED, COMPLETED, FAILED, RETRY, SKIPPED
+  payload   Json?
+  error     String?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  saga      RiskDecisionSaga @relation(fields: [sagaId], references: [id], onDelete: Cascade)
+
+  @@index([sagaId])
+  @@index([stepName])
+  @@map("saga_step_logs")
+}
+
+

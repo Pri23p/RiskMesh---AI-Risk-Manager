@@ -1,0 +1,26 @@
+{
+  "model_features": [
+    "amount",
+    "customerAvgAmount",
+    "transactionsLast10Min",
+    "transactionsLast24Hours",
+    "failedAttempts",
+    "accountAge",
+    "previousFraudCount",
+    "isNewDevice",
+    "isNewIp",
+    "amountRatio",
+    "logAmount",
+    "velocityRatio",
+    "failureRate",
+    "anomalyScore",
+    "paymentMethod_CARD",
+    "paymentMethod_UPI",
+    "paymentMethod_NET_BANKING",
+    "paymentMethod_WALLET",
+    "currency_INR",
+    "currency_USD",
+    "currency_EUR"
+  ],
+  "n_features": 21
+}

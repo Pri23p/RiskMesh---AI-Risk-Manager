@@ -1,0 +1,16 @@
+{
+  "model_version": "v1",
+  "algorithm": "XGBoost Classifier (XGBClassifier)",
+  "feature_count": 21,
+  "scale_pos_weight": 32.333333333333336,
+  "training_samples": 10500,
+  "validation_samples": 2250,
+  "test_samples": 2250,
+  "test_metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "pr_auc": 1.0,
+    "roc_auc": 1.0
+  }
+}
