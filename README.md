@@ -754,13 +754,3 @@ RiskMesh is built upon fundamental backend and distributed engineering principle
 * **State Durability:** Sagas and Transactional Outboxes ensure zero message loss and complete recovery across unexpected restarts.
 * **Explainability Over Black-Boxes:** Every risk decision is accompanied by human-interpretable SHAP factors for full merchant auditability.
 
----
-
-## 📄 Documentation Links
-* [ARCHITECTURE.md](ARCHITECTURE.md) — Detailed block diagrams, sequence flows, ERD, and component specs.
-* [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — 5-minute timed presentation script for live demonstrations.
-
----
-
-## 📜 License
-This project is developed for demonstration, production architecture evaluation, and hackathon presentation.
