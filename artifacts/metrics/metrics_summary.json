@@ -1,0 +1,88 @@
+{
+  "model_name": "FraudModel (XGBoost Early-Stopping)",
+  "evaluation_dataset": "Held-Out Test Set (15% Chronological Split)",
+  "operating_threshold": 0.3,
+  "cost_optimal_threshold": 0.15,
+  "total_test_records": 7500,
+  "actual_high_risk_positives": 1619,
+  "accuracy": 0.9017,
+  "precision": 0.7464,
+  "recall": 0.8252,
+  "f1_score": 0.7838,
+  "pr_auc": 0.8801,
+  "roc_auc": 0.96,
+  "brier_score": 0.063,
+  "false_positive_rate": 0.0772,
+  "false_negative_rate": 0.1748,
+  "confusion_matrix": {
+    "layout": {
+      "top_label": "ACTUAL",
+      "side_label": "PREDICTED",
+      "categories": [
+        "Legitimate Kept / Normal Return",
+        "Abusive / Fraudulent Return"
+      ]
+    },
+    "matrix": [
+      [
+        5427,
+        283
+      ],
+      [
+        454,
+        1336
+      ]
+    ],
+    "true_negatives": 5427,
+    "false_positives": 454,
+    "false_negatives": 283,
+    "true_positives": 1336,
+    "total_evaluated": 7500
+  },
+  "financial_impact": {
+    "currency": "INR (\u20b9)",
+    "fraud_loss_per_order": 2000.0,
+    "false_positive_cost": 300.0,
+    "manual_review_cost": 40.0,
+    "false_negative_cost": 2000.0,
+    "true_positives": 1336,
+    "true_negatives": 5427,
+    "false_positives": 454,
+    "false_negatives": 283,
+    "reviews_count": 446,
+    "loss_without_model": 3238000.0,
+    "cost_with_model": 720040.0,
+    "fraud_losses_prevented": 2672000.0,
+    "fp_cost": 136200.0,
+    "fn_cost": 566000.0,
+    "manual_review_cost_total": 17840.0,
+    "total_error_cost": 702200.0,
+    "net_savings": 2517960.0,
+    "roi_percentage": 349.7,
+    "cost_per_order": 96.01
+  },
+  "cost_optimal_metrics": {
+    "threshold": 0.15,
+    "precision": 0.6246,
+    "recall": 0.9302,
+    "f1_score": 0.7474,
+    "false_positive_rate": 0.1539,
+    "false_negative_rate": 0.0698,
+    "fraud_captured_pct": 93.0,
+    "manual_reviews_count": 2411,
+    "fp_cost": 271500.0,
+    "fn_cost": 226000.0,
+    "expected_cost": 593940.0,
+    "net_savings": 2644060.0,
+    "true_positives": 1506,
+    "false_positives": 905,
+    "false_negatives": 113
+  },
+  "risk_bands": {
+    "low_risk_max": 0.39,
+    "medium_risk_min": 0.39,
+    "medium_risk_max": 0.7,
+    "high_risk_min": 0.7
+  },
+  "evaluation_timestamp": "2026-10-14T02:02:38.977336"
+}

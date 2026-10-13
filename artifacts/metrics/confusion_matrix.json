@@ -1,0 +1,25 @@
+{
+  "layout": {
+    "top_label": "ACTUAL",
+    "side_label": "PREDICTED",
+    "categories": [
+      "Legitimate Kept / Normal Return",
+      "Abusive / Fraudulent Return"
+    ]
+  },
+  "matrix": [
+    [
+      5427,
+      283
+    ],
+    [
+      454,
+      1336
+    ]
+  ],
+  "true_negatives": 5427,
+  "false_positives": 454,
+  "false_negatives": 283,
+  "true_positives": 1336,
+  "total_evaluated": 7500
+}

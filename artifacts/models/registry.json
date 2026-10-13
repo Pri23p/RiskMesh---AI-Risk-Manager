@@ -1,0 +1,23 @@
+{
+  "active_version": "v1.2.0",
+  "models": [
+    {
+      "version": "v1.2.0",
+      "model_name": "FraudModel (XGBoost Early-Stopping)",
+      "created_at": "2026-10-14T02:01:23.230782",
+      "best_iteration": 299,
+      "early_stopping_used": true,
+      "calibration_method": "isotonic",
+      "metrics": {
+        "precision": 0.7001,
+        "recall": 0.8788,
+        "f1_score": 0.7794,
+        "pr_auc": 0.8985,
+        "roc_auc": 0.963
+      },
+      "status": "ACTIVE_PRODUCTION",
+      "notes": "FraudModel XGBoost with verified early stopping and isotonic posterior calibration."
+    }
+  ],
+  "last_updated": "2026-10-14T02:01:23.230859"
+}

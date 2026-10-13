@@ -1,0 +1,245 @@
+{
+  "dataset_analyzed": "data/processed/train.csv",
+  "sample_count": 35000,
+  "target_column": "fraudulent_return",
+  "total_features_evaluated": 26,
+  "potential_leakage_features_detected": [],
+  "leakage_risk_assessment": "CLEAN_DISTRIBUTION",
+  "methodology": "Pearson correlation, Spearman rank correlation, and Mutual Information (scikit-learn)",
+  "diagnostics": [
+    {
+      "feature": "customer_return_rate",
+      "type": "numeric",
+      "pearson_correlation": 0.5526,
+      "spearman_correlation": 0.4802,
+      "mutual_information": 0.1521,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customer_previous_returns",
+      "type": "numeric",
+      "pearson_correlation": 0.3843,
+      "spearman_correlation": 0.3798,
+      "mutual_information": 0.0771,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customer_previous_chargebacks",
+      "type": "numeric",
+      "pearson_correlation": 0.3537,
+      "spearman_correlation": 0.3909,
+      "mutual_information": 0.0638,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customer_chargeback_rate",
+      "type": "numeric",
+      "pearson_correlation": 0.277,
+      "spearman_correlation": 0.3908,
+      "mutual_information": 0.0618,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "billing_shipping_match",
+      "type": "numeric",
+      "pearson_correlation": -0.2473,
+      "spearman_correlation": -0.2473,
+      "mutual_information": 0.0297,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "high_value_item",
+      "type": "numeric",
+      "pearson_correlation": 0.1479,
+      "spearman_correlation": 0.1479,
+      "mutual_information": 0.0151,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "is_cod",
+      "type": "numeric",
+      "pearson_correlation": 0.1352,
+      "spearman_correlation": 0.1352,
+      "mutual_information": 0.0086,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "order_amount",
+      "type": "numeric",
+      "pearson_correlation": 0.1295,
+      "spearman_correlation": 0.1887,
+      "mutual_information": 0.0197,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "current_vs_average_order_ratio",
+      "type": "numeric",
+      "pearson_correlation": 0.1211,
+      "spearman_correlation": 0.223,
+      "mutual_information": 0.0332,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "average_order_value",
+      "type": "numeric",
+      "pearson_correlation": -0.0932,
+      "spearman_correlation": -0.1022,
+      "mutual_information": 0.0044,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "product_category",
+      "type": "categorical",
+      "pearson_correlation": 0.0345,
+      "spearman_correlation": 0.0,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Categorical domain attribute"
+    },
+    {
+      "feature": "payment_method",
+      "type": "categorical",
+      "pearson_correlation": -0.0321,
+      "spearman_correlation": 0.0,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Categorical domain attribute"
+    },
+    {
+      "feature": "ip_region",
+      "type": "categorical",
+      "pearson_correlation": -0.0152,
+      "spearman_correlation": 0.0,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Categorical domain attribute"
+    },
+    {
+      "feature": "orders_last_24h",
+      "type": "numeric",
+      "pearson_correlation": 0.014,
+      "spearman_correlation": 0.0019,
+      "mutual_information": 0.0034,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "orders_last_7d",
+      "type": "numeric",
+      "pearson_correlation": 0.0106,
+      "spearman_correlation": 0.0047,
+      "mutual_information": 0.0009,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "previous_failed_deliveries",
+      "type": "numeric",
+      "pearson_correlation": -0.0078,
+      "spearman_correlation": -0.0086,
+      "mutual_information": 0.0028,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "number_of_addresses",
+      "type": "numeric",
+      "pearson_correlation": -0.0073,
+      "spearman_correlation": -0.0058,
+      "mutual_information": 0.0015,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customer_region",
+      "type": "categorical",
+      "pearson_correlation": -0.0068,
+      "spearman_correlation": 0.0,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Categorical domain attribute"
+    },
+    {
+      "feature": "orders_from_device",
+      "type": "numeric",
+      "pearson_correlation": 0.0066,
+      "spearman_correlation": 0.0041,
+      "mutual_information": 0.0039,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customer_previous_orders",
+      "type": "numeric",
+      "pearson_correlation": -0.0043,
+      "spearman_correlation": -0.0146,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "account_age_days",
+      "type": "numeric",
+      "pearson_correlation": -0.0039,
+      "spearman_correlation": -0.0145,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "device_risk_history",
+      "type": "numeric",
+      "pearson_correlation": 0.0024,
+      "spearman_correlation": 0.0034,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "shipping_distance",
+      "type": "numeric",
+      "pearson_correlation": -0.002,
+      "spearman_correlation": -0.0039,
+      "mutual_information": 0.0,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "delivery_attempts",
+      "type": "numeric",
+      "pearson_correlation": 0.002,
+      "spearman_correlation": 0.0025,
+      "mutual_information": 0.0018,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customer_orders_last_30d",
+      "type": "numeric",
+      "pearson_correlation": -0.0004,
+      "spearman_correlation": 0.0015,
+      "mutual_information": 0.0016,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    },
+    {
+      "feature": "customers_from_device",
+      "type": "numeric",
+      "pearson_correlation": 0.0,
+      "spearman_correlation": 0.0,
+      "mutual_information": 0.0028,
+      "is_suspicious_leakage": false,
+      "interpretation": "Realistic non-deterministic behavioral distribution"
+    }
+  ]
+}

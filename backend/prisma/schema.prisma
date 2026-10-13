@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  MANUAL_REVIEW
+  BLOCKED
+  REFUNDED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskRecommendation {
+  ALLOW
+  REQUIRE_2FA
+  MANUAL_REVIEW
+  REJECT
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  EXPIRED
+}
+
+enum SignalSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  orderId         String            @unique
+  merchantId      String
+  customerId      String
+  amount          Float
+  currency        String            @default("INR")
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   String
+  ipAddress       String?
+  deviceId        String?
+  shippingCity    String?
+  shippingState   String?
+  itemsCount      Int               @default(1)
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  riskAssessment  RiskAssessment?
+  fraudSignals    FraudSignal[]
+  verifications   Verification[]
+
+  @@index([merchantId])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RiskAssessment {
+  id              String             @id @default(uuid())
+  transactionId   String             @unique
+  riskScore       Float
+  riskLevel       RiskLevel
+  recommendation  RiskRecommendation
+  factors         Json
+  evaluatedAt     DateTime           @default(now())
+
+  transaction     Transaction        @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([riskLevel])
+  @@index([evaluatedAt])
+}
+
+model FraudSignal {
+  id            String         @id @default(uuid())
+  transactionId String
+  signalType    String
+  severity      SignalSeverity
+  description   String
+  metadata      Json?
+  detectedAt    DateTime       @default(now())
+
+  transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([signalType])
+  @@index([severity])
+}
+
+model Verification {
+  id            String             @id @default(uuid())
+  transactionId String
+  method        String
+  status        VerificationStatus @default(PENDING)
+  attempts      Int                @default(0)
+  codeHash      String?
+  expiresAt     DateTime
+  verifiedAt    DateTime?
+  createdAt     DateTime           @default(now())
+
+  transaction   Transaction        @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String
+  actorId    String
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+model AnalyticsMetric {
+  id          String   @id @default(uuid())
+  metricName  String
+  metricValue Float
+  dimensions  Json?
+  timestamp   DateTime @default(now())
+
+  @@index([metricName])
+  @@index([timestamp])
+}

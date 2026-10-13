@@ -1,0 +1,62 @@
+[
+  {
+    "feature": "customer_previous_chargebacks",
+    "importance": 0.1425
+  },
+  {
+    "feature": "customer_return_rate",
+    "importance": 0.1173
+  },
+  {
+    "feature": "is_order_value_surge",
+    "importance": 0.1049
+  },
+  {
+    "feature": "billing_shipping_match",
+    "importance": 0.0452
+  },
+  {
+    "feature": "is_cod",
+    "importance": 0.0444
+  },
+  {
+    "feature": "customer_chargeback_rate",
+    "importance": 0.044
+  },
+  {
+    "feature": "product_category_Apparel & Footwear",
+    "importance": 0.0421
+  },
+  {
+    "feature": "cod_high_return_risk",
+    "importance": 0.0408
+  },
+  {
+    "feature": "customer_previous_returns",
+    "importance": 0.0395
+  },
+  {
+    "feature": "current_vs_average_order_ratio",
+    "importance": 0.0388
+  },
+  {
+    "feature": "account_maturity_trust",
+    "importance": 0.0288
+  },
+  {
+    "feature": "payment_method_Cash on Delivery (COD)",
+    "importance": 0.028
+  },
+  {
+    "feature": "region_mismatch_flag",
+    "importance": 0.0271
+  },
+  {
+    "feature": "high_value_item",
+    "importance": 0.0225
+  },
+  {
+    "feature": "product_category_Beauty & Personal Care",
+    "importance": 0.0135
+  }
+]

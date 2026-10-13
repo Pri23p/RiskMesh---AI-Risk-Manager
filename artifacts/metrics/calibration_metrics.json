@@ -1,0 +1,81 @@
+{
+  "method": "isotonic",
+  "is_fitted": true,
+  "brier_score_uncalibrated": 0.0746,
+  "brier_score_calibrated": 0.0594,
+  "brier_score_improvement": 0.0152,
+  "expected_calibration_error_ece": 0.0,
+  "calibration_quality": "MODERATE",
+  "reliability_diagram": [
+    {
+      "bin": 0,
+      "bin_range": "0.0-0.1",
+      "mean_predicted_prob": 0.0106,
+      "fraction_of_positives": 0.0106,
+      "count": 4528
+    },
+    {
+      "bin": 1,
+      "bin_range": "0.1-0.2",
+      "mean_predicted_prob": 0.141,
+      "fraction_of_positives": 0.141,
+      "count": 709
+    },
+    {
+      "bin": 2,
+      "bin_range": "0.2-0.3",
+      "mean_predicted_prob": 0.2516,
+      "fraction_of_positives": 0.2516,
+      "count": 457
+    },
+    {
+      "bin": 3,
+      "bin_range": "0.3-0.4",
+      "mean_predicted_prob": 0.368,
+      "fraction_of_positives": 0.368,
+      "count": 269
+    },
+    {
+      "bin": 4,
+      "bin_range": "0.4-0.5",
+      "mean_predicted_prob": 0.4895,
+      "fraction_of_positives": 0.4895,
+      "count": 237
+    },
+    {
+      "bin": 5,
+      "bin_range": "0.5-0.6",
+      "mean_predicted_prob": 0.5,
+      "fraction_of_positives": 0.5,
+      "count": 2
+    },
+    {
+      "bin": 6,
+      "bin_range": "0.6-0.7",
+      "mean_predicted_prob": 0.6456,
+      "fraction_of_positives": 0.6456,
+      "count": 206
+    },
+    {
+      "bin": 7,
+      "bin_range": "0.7-0.8",
+      "mean_predicted_prob": 0.7455,
+      "fraction_of_positives": 0.7455,
+      "count": 55
+    },
+    {
+      "bin": 8,
+      "bin_range": "0.8-0.9",
+      "mean_predicted_prob": 0.847,
+      "fraction_of_positives": 0.847,
+      "count": 281
+    },
+    {
+      "bin": 9,
+      "bin_range": "0.9-1.0",
+      "mean_predicted_prob": 0.9828,
+      "fraction_of_positives": 0.9828,
+      "count": 756
+    }
+  ]
+}
