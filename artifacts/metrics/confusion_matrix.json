@@ -9,17 +9,17 @@
   },
   "matrix": [
     [
-      5427,
-      283
+      5318,
+      223
     ],
     [
-      454,
-      1336
+      563,
+      1395
     ]
   ],
-  "true_negatives": 5427,
-  "false_positives": 454,
-  "false_negatives": 283,
-  "true_positives": 1336,
-  "total_evaluated": 7500
+  "true_negatives": 5318,
+  "false_positives": 563,
+  "false_negatives": 223,
+  "true_positives": 1395,
+  "total_evaluated": 7499
 }

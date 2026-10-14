@@ -1,8 +1,9 @@
 """
-RiskSentinel - Held-out Test Set Final Honest Evaluation & Calibration Validation
-Evaluates chosen model on unseen test set (7,500 records), tests probability calibration,
-computes precision-recall curve, ROC curve, comprehensive financial threshold sensitivity,
-and writes honest metrics artifacts.
+RiskSentinel - Held-out Test Set Final Honest Evaluation, Calibration & Threshold Policy
+Evaluates chosen model on unseen test set (7,500 records).
+Evaluates probability calibration on untouched test data (computing genuine test ECE, Brier score,
+and bin sample counts). Explicitly documents the threshold policy trade-off between
+the mathematical cost-minimizing threshold and the operational production threshold.
 """
 
 import sys
@@ -22,6 +23,7 @@ from sklearn.metrics import (
 )
 
 from src.evaluation.cost_model import BusinessCostModel
+from src.models.calibration import CalibratedFraudScorer
 from src.features.engineer import get_feature_names
 
 def evaluate_held_out_test_set(
@@ -33,14 +35,16 @@ def evaluate_held_out_test_set(
     print("=" * 75, flush=True)
     print("RiskSentinel - Held-Out Test Set Final Honest Evaluation", flush=True)
     print("=" * 75, flush=True)
-    
+
     # 1. Load test data
     test_df = pd.read_csv(test_path)
+    # Exclude the manually planted demo persona from quantitative evaluation.
+    test_df = test_df.loc[test_df["order_id"] != "ORD-10239"].copy()
     y_test = test_df["fraudulent_return"].values
-    
+
     print(f"[TEST] Held-out test records: {len(test_df):,}", flush=True)
     print(f"[TEST] Actual high-risk fraudulent return positives: {y_test.sum():,} ({y_test.mean():.2%})", flush=True)
-    
+
     # 2. Load model pipeline and threshold config
     pipeline = joblib.load(model_pipeline_path)
     feat_engineer = pipeline["feature_engineer"]
@@ -48,30 +52,45 @@ def evaluate_held_out_test_set(
     clf = pipeline["classifier"]
     calibrator = pipeline.get("calibrator", None)
     model_name = pipeline.get("model_name", "Best Model")
-    
-    with open(threshold_config_path, "r") as f:
-        threshold_config = json.load(f)
-    
-    operating_threshold = threshold_config.get("optimal_threshold", 0.45)
+
+    cfg = {}
+    operating_threshold = 0.30
+    if os.path.exists(threshold_config_path):
+        with open(threshold_config_path, "r") as f:
+            cfg = json.load(f)
+            operating_threshold = cfg.get("operating_threshold", cfg.get("optimal_threshold", 0.30))
+
     print(f"[MODEL] Loaded pipeline: {model_name}", flush=True)
-    print(f"[MODEL] Operating classification threshold: {operating_threshold:.2f}", flush=True)
-    
+    print(f"[MODEL] Operational production threshold: {operating_threshold:.2f}", flush=True)
+
     # 3. Transform test features & predict probabilities
     test_engineered = feat_engineer.transform(test_df)
     X_test_trans = preprocessor.transform(test_engineered)
-    
+
+    raw_test_proba = clf.predict_proba(X_test_trans)[:, 1]
+
+    # Evaluate calibration strictly on out-of-sample held-out test data
     if calibrator is not None and hasattr(calibrator, "predict_proba"):
         test_proba = calibrator.predict_proba(X_test_trans)[:, 1]
-        print("[CALIBRATION] Using isotonic calibrated probabilities for evaluation.", flush=True)
+        calib_metrics = calibrator.evaluate_test_calibration(
+            y_test=y_test,
+            cal_proba_test=test_proba,
+            raw_proba_test=raw_test_proba,
+            n_bins=10
+        )
+        print(f"[CALIBRATION] Evaluated on untouched test data: ECE={calib_metrics['expected_calibration_error_ece']} | MCE={calib_metrics['maximum_calibration_error_mce']} | Brier={calib_metrics['brier_score_calibrated']} ({calib_metrics['calibration_quality']})", flush=True)
     else:
-        test_proba = clf.predict_proba(X_test_trans)[:, 1]
-        
+        test_proba = raw_test_proba
+        calib_metrics = CalibratedFraudScorer(method="none").evaluate_test_calibration(
+            y_test, test_proba, raw_test_proba)
+    calib_metrics["split_provenance"] = pipeline.get("split_provenance", {"status": "unknown"})
+
     test_preds = (test_proba >= operating_threshold).astype(int)
-    
+
     # 4. Calculate core metrics on held-out test data
     cm = confusion_matrix(y_test, test_preds, labels=[0, 1])
     tn, fp, fn, tp = cm.ravel()
-    
+
     prec = float(precision_score(y_test, test_preds, zero_division=0))
     rec = float(recall_score(y_test, test_preds, zero_division=0))
     f1 = float(f1_score(y_test, test_preds, zero_division=0))
@@ -81,24 +100,24 @@ def evaluate_held_out_test_set(
     fnr = float(fn / max(1, fn + tp))
     accuracy = float((tp + tn) / len(y_test))
     brier = float(brier_score_loss(y_test, test_proba))
-    
+
     cost_model = BusinessCostModel(
         fraud_loss_per_order=2000.0,
         false_positive_cost=300.0,
         manual_review_cost=40.0,
         false_negative_cost=2000.0
     )
-    
-    low_band = threshold_config.get("low_risk_max", 0.39)
-    high_band = threshold_config.get("high_risk_min", 0.70)
-    review_count = int(np.sum((test_proba >= low_band) & (test_proba < high_band)))
-    
+
+    low_band = operating_threshold
+    high_band = 0.70
+    review_count = int(np.sum(test_proba >= operating_threshold))
+
     cost_metrics = cost_model.calculate_cost(
         fp=int(fp), fn=int(fn), tp=int(tp), tn=int(tn), reviews_count=review_count
     )
-    
+
     print("\n" + "-" * 55, flush=True)
-    print(f"HELD-OUT TEST SET METRICS ({model_name} @ Threshold={operating_threshold:.2f}):", flush=True)
+    print(f"HELD-OUT TEST SET METRICS ({model_name} @ Operational Policy Threshold={operating_threshold:.2f}):", flush=True)
     print(f"  Test Dataset Size:   {len(y_test):,} orders", flush=True)
     print(f"  Accuracy:            {accuracy:.4f} ({accuracy*100:.1f}%)", flush=True)
     print(f"  Precision:           {prec:.4f} ({prec*100:.1f}%)", flush=True)
@@ -107,6 +126,7 @@ def evaluate_held_out_test_set(
     print(f"  PR-AUC:              {pr_auc:.4f}", flush=True)
     print(f"  ROC-AUC:             {roc_auc:.4f}", flush=True)
     print(f"  Brier Score:         {brier:.4f}", flush=True)
+    print(f"  ECE:                 {calib_metrics.get('expected_calibration_error_ece', 'N/A')}", flush=True)
     print(f"  False Positive Rate: {fpr:.4f} ({fpr*100:.1f}%)", flush=True)
     print(f"  False Negative Rate: {fnr:.4f} ({fnr*100:.1f}%)", flush=True)
     print(f"  True Positives (TP):  {tp:,}", flush=True)
@@ -115,7 +135,7 @@ def evaluate_held_out_test_set(
     print(f"  False Negatives (FN): {fn:,} -> Unmitigated Fraud Loss: INR {cost_metrics['fn_cost']:,.0f}", flush=True)
     print(f"  Net Estimated Savings: INR {cost_metrics['net_savings']:,.0f} (ROI: {cost_metrics['roi_percentage']:.1f}%)", flush=True)
     print("-" * 55 + "\n", flush=True)
-    
+
     # 5. Precision-Recall Curve Coordinates
     precisions, recalls, pr_thresholds = precision_recall_curve(y_test, test_proba)
     step = max(1, len(pr_thresholds) // 40)
@@ -131,7 +151,7 @@ def evaluate_held_out_test_set(
         "precision": round(float(precisions[-1]), 4),
         "threshold": 1.0
     })
-    
+
     # 6. ROC Curve Coordinates
     fpr_arr, tpr_arr, roc_thresholds = roc_curve(y_test, test_proba)
     step_roc = max(1, len(roc_thresholds) // 40)
@@ -145,7 +165,7 @@ def evaluate_held_out_test_set(
             "tpr": round(float(tpr_arr[i]), 4),
             "threshold": round(th_val, 3)
         })
-        
+
     # 7. Comprehensive Threshold Sensitivity Analysis
     threshold_curve_points = []
     threshold_steps = [round(t, 2) for t in np.arange(0.10, 0.95, 0.05)]
@@ -157,7 +177,7 @@ def evaluate_held_out_test_set(
         t_r = float(recall_score(y_test, th_pred, zero_division=0))
         t_f1 = float(f1_score(y_test, th_pred, zero_division=0))
         t_cost = cost_model.calculate_cost(fp=int(t_fp), fn=int(t_fn), tp=int(t_tp), tn=int(t_tn))
-        
+
         threshold_curve_points.append({
             "threshold": th,
             "precision": round(t_p, 4),
@@ -176,9 +196,14 @@ def evaluate_held_out_test_set(
             "false_negatives": int(t_fn)
         })
 
-    # Find cost-optimal threshold from sweep
-    min_cost_point = min(threshold_curve_points, key=lambda x: x["expected_cost"])
-    
+    # Freeze thresholds selected without test labels. Test curves are descriptive only.
+    cost_min_th = cfg["cost_optimal_threshold"]
+    policy_explanation = cfg["policy_explanation"]
+    policy_explanation["held_out_comparison"] = {
+        "cost_minimizing": next(p for p in threshold_curve_points if p["threshold"] == cost_min_th),
+        "operational": next(p for p in threshold_curve_points if p["threshold"] == operating_threshold)
+    }
+
     # 8. Feature Importances
     feature_names = get_feature_names(preprocessor)
     feat_importance_list = []
@@ -199,7 +224,7 @@ def evaluate_held_out_test_set(
                 "importance": round(float(coef), 4)
             })
     feat_importance_list.sort(key=lambda x: x["importance"], reverse=True)
-    
+
     confusion_matrix_payload = {
         "layout": {
             "top_label": "ACTUAL",
@@ -218,12 +243,13 @@ def evaluate_held_out_test_set(
     }
 
     os.makedirs(metrics_output_dir, exist_ok=True)
-    
+
     metrics_summary = {
         "model_name": model_name,
         "evaluation_dataset": "Held-Out Test Set (15% Chronological Split)",
         "operating_threshold": operating_threshold,
-        "cost_optimal_threshold": min_cost_point["threshold"],
+        "cost_optimal_threshold": cost_min_th,
+        "policy_decision": policy_explanation,
         "total_test_records": len(y_test),
         "actual_high_risk_positives": int(y_test.sum()),
         "accuracy": round(accuracy, 4),
@@ -233,11 +259,15 @@ def evaluate_held_out_test_set(
         "pr_auc": round(pr_auc, 4),
         "roc_auc": round(roc_auc, 4),
         "brier_score": round(brier, 4),
+        "calibration": {
+            "expected_calibration_error_ece": calib_metrics.get("expected_calibration_error_ece"),
+            "maximum_calibration_error_mce": calib_metrics.get("maximum_calibration_error_mce"),
+            "calibration_quality": calib_metrics.get("calibration_quality", "WELL_CALIBRATED")
+        },
         "false_positive_rate": round(fpr, 4),
         "false_negative_rate": round(fnr, 4),
         "confusion_matrix": confusion_matrix_payload,
         "financial_impact": cost_metrics,
-        "cost_optimal_metrics": min_cost_point,
         "risk_bands": {
             "low_risk_max": low_band,
             "medium_risk_min": low_band,
@@ -246,13 +276,16 @@ def evaluate_held_out_test_set(
         },
         "evaluation_timestamp": pd.Timestamp.now().isoformat()
     }
-    
+
     with open(os.path.join(metrics_output_dir, "metrics_summary.json"), "w") as f:
         json.dump(metrics_summary, f, indent=2)
-        
+
+    with open(os.path.join(metrics_output_dir, "calibration_metrics.json"), "w") as f:
+        json.dump(calib_metrics, f, indent=2)
+
     with open(os.path.join(metrics_output_dir, "confusion_matrix.json"), "w") as f:
         json.dump(confusion_matrix_payload, f, indent=2)
-        
+
     with open(os.path.join(metrics_output_dir, "pr_curve.json"), "w") as f:
         json.dump({
             "pr_auc": round(pr_auc, 4),
@@ -261,30 +294,31 @@ def evaluate_held_out_test_set(
             "operating_recall": round(rec, 4),
             "curve_points": pr_curve_data
         }, f, indent=2)
-        
+
     with open(os.path.join(metrics_output_dir, "roc_curve.json"), "w") as f:
         json.dump({
             "roc_auc": round(roc_auc, 4),
             "curve_points": roc_curve_data
         }, f, indent=2)
-        
+
     with open(os.path.join(metrics_output_dir, "threshold_curves.json"), "w") as f:
         json.dump({
             "operating_threshold": operating_threshold,
-            "cost_optimal_threshold": min_cost_point["threshold"],
+            "cost_optimal_threshold": cost_min_th,
             "points": threshold_curve_points
         }, f, indent=2)
-        
+
     with open(os.path.join(metrics_output_dir, "threshold_sensitivity.json"), "w") as f:
         json.dump({
             "operating_threshold": operating_threshold,
-            "cost_optimal_threshold": min_cost_point["threshold"],
+            "cost_optimal_threshold": cost_min_th,
+            "policy_explanation": policy_explanation,
             "sensitivity_grid": threshold_curve_points
         }, f, indent=2)
 
     with open(os.path.join(metrics_output_dir, "feature_importances.json"), "w") as f:
         json.dump(feat_importance_list[:15], f, indent=2)
-        
+
     print(f"[ARTIFACTS] All held-out test evaluation artifacts written to {metrics_output_dir}/", flush=True)
     return metrics_summary
 

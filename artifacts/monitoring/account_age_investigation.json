@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic generator diagnostic only; raw production alert retained",
+  "reference_rows": 35000,
+  "current_rows": 7499,
+  "raw_account_age_psi": 3.0883,
+  "generator_epoch_adjusted_psi": 0.0012,
+  "reference_mean_age": 445.12665714285714,
+  "current_mean_age": 660.3019069209228,
+  "explanation": "Generator adds floor(elapsed days since 2025-01-01 08:00) to fixed customer age. Subtracting that known synthetic term isolates cohort composition; it is not an inference-time feature change."
+}

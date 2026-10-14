@@ -20,7 +20,7 @@ from app.services.analyst_agent import GroundedAnalystAgent
 from src.monitoring.drift_monitor import ProductionDriftMonitor
 from src.evaluation.cost_model import BusinessCostModel
 
-def test_complete_transaction_workflow():
+def test_complete_transaction_workflow(tmp_path):
     # Step 1: Simulate incoming merchant order transaction
     order_payload = {
         "order_id": "ORD-LIVE-77881",
@@ -99,11 +99,10 @@ def test_complete_transaction_workflow():
 
     # Step 7: Drift Evaluation on Batch
     batch_df = pd.DataFrame([order_payload] * 15)
-    drift_monitor = ProductionDriftMonitor()
+    drift_monitor = ProductionDriftMonitor(artifacts_dir=str(tmp_path))
     drift_report = drift_monitor.evaluate_feature_and_score_drift(
         current_df=batch_df,
-        current_scores=np.array([risk_result["risk_score"]] * 15),
-        reference_scores=np.array([45.0] * 15)
+        save_report=False
     )
     assert "drift_status" in drift_report
     assert "overall_max_psi" in drift_report

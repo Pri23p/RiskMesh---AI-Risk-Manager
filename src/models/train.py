@@ -40,37 +40,40 @@ def train_and_compare_models(
     print("=" * 75, flush=True)
     print("RiskSentinel - Multi-Model Training, Early-Stopping & Calibration Pipeline", flush=True)
     print("=" * 75, flush=True)
-    
+
     # 1. Load data
     train_df = pd.read_csv(train_path)
     val_df = pd.read_csv(val_path)
-    
+
+    # Reserve chronological calibration and policy folds before model selection.
+    cut = len(val_df) // 3
+    val_df, cal_df, policy_df = val_df.iloc[:cut], val_df.iloc[cut:2*cut], val_df.iloc[2*cut:]
     y_train = train_df["fraudulent_return"].values
     y_val = val_df["fraudulent_return"].values
-    
+
     print(f"[TRAIN] Training records: {len(train_df):,} | Positives: {y_train.sum():,} ({y_train.mean():.2%})", flush=True)
     print(f"[VAL]   Validation records: {len(val_df):,} | Positives: {y_val.sum():,} ({y_val.mean():.2%})", flush=True)
-    
+
     # 2. Build feature engineering & preprocessing
     feat_engineer, preprocessor = build_preprocessing_pipeline()
-    
+
     # Fit strictly on training data
     train_engineered = feat_engineer.fit_transform(train_df)
     X_train_trans = preprocessor.fit_transform(train_engineered)
-    
+
     val_engineered = feat_engineer.transform(val_df)
     X_val_trans = preprocessor.transform(val_engineered)
-    
+
     print(f"[PREPROCESS] Preprocessed training matrix shape: {X_train_trans.shape}", flush=True)
     print(f"[PREPROCESS] Preprocessed validation matrix shape: {X_val_trans.shape}", flush=True)
-    
+
     cost_model = BusinessCostModel(
         fraud_loss_per_order=2000.0,
         false_positive_cost=300.0,
         manual_review_cost=40.0,
         false_negative_cost=2000.0
     )
-    
+
     # 3. Candidate Models with Verified Early Stopping
     models_to_train = {
         "Logistic Regression (Baseline)": LogisticRegression(
@@ -86,14 +89,14 @@ def train_and_compare_models(
             early_stopping_rounds=15, random_state=42
         )
     }
-    
+
     comparison_results = []
     trained_pipelines = {}
-    
+
     for name, clf in models_to_train.items():
         print(f"\n[MODEL] Training candidate: {name}...", flush=True)
         t0 = time.time()
-        
+
         # Support both FraudModel.train with early stopping and standard fit
         if hasattr(clf, "train"):
             clf.train(
@@ -110,21 +113,21 @@ def train_and_compare_models(
             clf.fit(X_train_trans, y_train)
             best_iter = None
             stopped_early = False
-            
+
         fit_time = round(time.time() - t0, 3)
-        
+
         # Benchmark inference time on validation batch
         t_infer_start = time.time()
         val_proba = clf.predict_proba(X_val_trans)[:, 1]
         infer_duration = time.time() - t_infer_start
         latency_ms_per_record = round((infer_duration / len(val_df)) * 1000.0, 4)
         throughput_rec_sec = int(len(val_df) / max(0.0001, infer_duration))
-        
+
         # Default 0.50 threshold metrics on validation
         val_pred = (val_proba >= 0.50).astype(int)
         cm = confusion_matrix(y_val, val_pred, labels=[0, 1])
         tn, fp, fn, tp = cm.ravel()
-        
+
         prec = float(precision_score(y_val, val_pred, zero_division=0))
         rec = float(recall_score(y_val, val_pred, zero_division=0))
         f1 = float(f1_score(y_val, val_pred, zero_division=0))
@@ -132,9 +135,9 @@ def train_and_compare_models(
         pr_auc = float(average_precision_score(y_val, val_proba))
         fpr = float(fp / max(1, fp + tn))
         fnr = float(fn / max(1, fn + tp))
-        
+
         cost_eval = cost_model.calculate_cost(fp=int(fp), fn=int(fn), tp=int(tp), tn=int(tn))
-        
+
         entry = {
             "model_name": name,
             "fit_time_seconds": fit_time,
@@ -162,7 +165,7 @@ def train_and_compare_models(
             "roi_percentage": cost_eval["roi_percentage"]
         }
         comparison_results.append(entry)
-        
+
         full_pipeline = {
             "feature_engineer": feat_engineer,
             "preprocessor": preprocessor,
@@ -170,61 +173,65 @@ def train_and_compare_models(
             "model_name": name
         }
         trained_pipelines[name] = full_pipeline
-        
+
         print(f"        Val PR-AUC: {pr_auc:.4f} | F1: {f1:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | Net Savings: INR {cost_eval['net_savings']:,.0f}", flush=True)
 
     # Select best candidate based on highest validation Net Savings
     comparison_results.sort(key=lambda x: x["net_savings"], reverse=True)
     best_candidate_name = comparison_results[0]["model_name"]
     print(f"\n[SELECTION] Best model selected on validation business savings: {best_candidate_name}", flush=True)
-    
+
     best_pipeline = trained_pipelines[best_candidate_name]
     best_clf = best_pipeline["classifier"]
-    
+
     # 4. Probability Calibration
-    print("[CALIBRATION] Fitting Isotonic Probability Calibrator on validation set...", flush=True)
     calibrator = CalibratedFraudScorer(method="isotonic")
-    calibrator.fit(best_clf, X_val_trans, y_val)
-    calib_report = calibrator.get_calibration_report()
-    print(f"[CALIBRATION] ECE: {calib_report['expected_calibration_error_ece']} | Brier Score: {calib_report['brier_score_calibrated']} (Quality: {calib_report['calibration_quality']})", flush=True)
-    
+    X_cal = preprocessor.transform(feat_engineer.transform(cal_df))
+    calibrator.fit(best_clf, X_cal, cal_df["fraudulent_return"].values)
     best_pipeline["calibrator"] = calibrator
-    
-    # 5. Threshold Optimization on Validation Set
-    val_proba_best = best_clf.predict_proba(X_val_trans)[:, 1]
+    best_pipeline["split_provenance"] = {
+        "training": len(train_df), "model_selection": len(val_df),
+        "calibration": len(cal_df), "threshold_selection": len(policy_df),
+        "method": "Chronological non-overlapping folds; test excluded"
+    }
+    X_policy = preprocessor.transform(feat_engineer.transform(policy_df))
     threshold_grid, threshold_config = evaluate_threshold_grid(
-        y_true=y_val, y_proba=val_proba_best, cost_model=cost_model
+        policy_df["fraudulent_return"].values,
+        calibrator.predict_proba(X_policy)[:, 1], cost_model=cost_model
     )
-    print(f"[THRESHOLD] Optimal business threshold selected: {threshold_config['optimal_threshold']:.2f}", flush=True)
-    
+    threshold_config["selection_dataset"] = "Dedicated chronological policy fold"
+    threshold_config["selection_sample_count"] = len(policy_df)
+    calib_report = {"status": "Awaiting untouched test evaluation",
+                    "split_provenance": best_pipeline["split_provenance"]}
+
     # 6. Save Artifacts
     models_dir = os.path.join(artifacts_dir, "models")
     metrics_dir = os.path.join(artifacts_dir, "metrics")
     os.makedirs(models_dir, exist_ok=True)
     os.makedirs(metrics_dir, exist_ok=True)
-    
+
     for name, pipe in trained_pipelines.items():
         clean_file_name = name.lower().replace(" ", "_").replace("(", "").replace(")", "").replace("-", "_") + ".joblib"
         save_p = os.path.join(models_dir, clean_file_name)
         joblib.dump(pipe, save_p)
-        
+
     best_pipe_path = os.path.join(models_dir, "best_model_pipeline.joblib")
     joblib.dump(best_pipeline, best_pipe_path)
     print(f"[ARTIFACTS] Best pipeline saved to {best_pipe_path}", flush=True)
-    
+
     with open(os.path.join(metrics_dir, "model_comparison.json"), "w") as f:
         json.dump({
             "selected_model": best_candidate_name,
             "models": comparison_results,
             "comparison_timestamp": pd.Timestamp.now().isoformat()
         }, f, indent=2)
-        
+
     with open(os.path.join(metrics_dir, "threshold_config.json"), "w") as f:
         json.dump(threshold_config, f, indent=2)
-        
+
     with open(os.path.join(metrics_dir, "threshold_grid_validation.json"), "w") as f:
         json.dump(threshold_grid, f, indent=2)
-        
+
     with open(os.path.join(metrics_dir, "calibration_metrics.json"), "w") as f:
         json.dump(calib_report, f, indent=2)
 
@@ -242,7 +249,7 @@ def train_and_compare_models(
         calibration_method="isotonic",
         notes="FraudModel XGBoost with verified early stopping and isotonic posterior calibration."
     )
-    
+
     print(f"[REGISTRY] Model v1.2.0 registered in {os.path.join(models_dir, 'registry.json')}", flush=True)
     print(f"[ARTIFACTS] All training and calibration artifacts written successfully.", flush=True)
     return best_pipeline, comparison_results, threshold_config

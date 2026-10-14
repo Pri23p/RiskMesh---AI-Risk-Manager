@@ -37,12 +37,12 @@ class RiskScoringService:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
         model_path = os.path.join(base_dir, "artifacts", "models", "best_model_pipeline.joblib")
         thresh_path = os.path.join(base_dir, "artifacts", "metrics", "threshold_config.json")
-        
+
         if os.path.exists(model_path):
             self.model_pipeline = joblib.load(model_path)
             with open(thresh_path, "r") as f:
                 self.threshold_config = json.load(f)
-            
+
             self.explainer = RiskSentinelExplainer(
                 model=self.model_pipeline["classifier"],
                 preprocessor=self.model_pipeline["preprocessor"],
@@ -72,14 +72,14 @@ class RiskScoringService:
 
         df_eng = feat_eng.transform(df_raw)
         X_trans = preproc.transform(df_eng)
-        
+
         if calibrator is not None and hasattr(calibrator, "predict_proba"):
             proba = float(calibrator.predict_proba(X_trans)[0, 1])
             risk_score = calibrator.calculate_business_risk_score(proba)
         else:
             proba = float(clf.predict_proba(X_trans)[0, 1])
             risk_score = int(round(proba * 100.0))
-        
+
         explanation = self.explainer.explain_instance(
             raw_record=order_dict,
             risk_probability=proba,
@@ -104,7 +104,7 @@ class RiskScoringService:
 
         df_eng = feat_eng.transform(orders_df)
         X_trans = preproc.transform(df_eng)
-        
+
         if calibrator is not None and hasattr(calibrator, "predict_proba"):
             probas = calibrator.predict_proba(X_trans)[:, 1]
         else:
@@ -112,7 +112,7 @@ class RiskScoringService:
 
         results = []
         n_rows = len(orders_df)
-        
+
         importances = getattr(clf, "feature_importances_", None)
         if importances is None and hasattr(clf, "coef_"):
             importances = np.abs(clf.coef_[0])
@@ -126,13 +126,13 @@ class RiskScoringService:
                 risk_score_int = calibrator.calculate_business_risk_score(prob)
             else:
                 risk_score_int = int(round(prob * 100.0))
-            
-            if risk_score_int < 40:
+
+            if prob < self.threshold_config["operating_threshold"]:
                 risk_level = "LOW"
                 recommended_action = "Approve normally"
                 requires_human_review = False
                 review_reason = None
-            elif risk_score_int >= 70:
+            elif prob >= self.threshold_config.get("high_risk_min", 0.70):
                 risk_level = "HIGH"
                 recommended_action = "Hold for manual review before shipment/refund"
                 requires_human_review = True
@@ -153,7 +153,7 @@ class RiskScoringService:
             val_ratio = float(row_raw.get("current_vs_average_order_ratio", 1.0))
             dev_custs = float(row_raw.get("customers_from_device", 1))
             bill_ship_match = float(row_raw.get("billing_shipping_match", 1))
-            
+
             if c_prev_cb >= 1:
                 risk_factors_narrative.append(f"Customer has {int(c_prev_cb)} previous chargeback record(s)")
             if c_ret_rate > 0.45 and c_prev_orders >= 3:
@@ -212,5 +212,5 @@ class RiskScoringService:
                 "all_contributions": contributions[:10],
                 "decision_narrative": narrative
             })
-            
+
         return results

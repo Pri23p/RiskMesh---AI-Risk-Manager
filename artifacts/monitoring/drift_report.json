@@ -1,64 +1,66 @@
 {
-  "evaluation_timestamp": "2026-10-14T02:06:01.871938",
-  "drift_status": "CRITICAL_DRIFT",
-  "overall_max_psi": 8.2908,
-  "retraining_recommended": true,
-  "recommended_action": "Trigger automated model retraining pipeline. Production distributions have deviated significantly.",
-  "drifted_features": [
+  "evaluation_timestamp": "2026-10-14T02:44:07.146942",
+  "reference_sample_size": 35000,
+  "feature_schema": [
     "order_amount",
     "account_age_days",
     "customer_return_rate",
+    "customer_chargeback_rate",
     "current_vs_average_order_ratio",
     "orders_last_24h"
+  ],
+  "comparison_scope": "Same raw feature definitions and units required; distribution drift is not proof of accuracy degradation",
+  "current_sample_size": 1000,
+  "drift_status": "CRITICAL_DRIFT",
+  "overall_max_psi": 2.8459,
+  "retraining_recommended": true,
+  "recommended_action": "Investigate population changes and outcome performance before approving retraining.",
+  "drifted_features": [
+    "account_age_days"
   ],
   "feature_metrics": [
     {
       "feature": "order_amount",
-      "psi": 8.282,
-      "ks_statistic": 0.7934,
-      "ks_pvalue": 0.0,
-      "status": "SIGNIFICANT_DRIFT"
+      "psi": 0.0142,
+      "ks_statistic": 0.0341,
+      "ks_pvalue": 0.202521,
+      "status": "STABLE"
     },
     {
       "feature": "account_age_days",
-      "psi": 8.2908,
-      "ks_statistic": 0.9995,
+      "psi": 2.8459,
+      "ks_statistic": 0.4549,
       "ks_pvalue": 0.0,
       "status": "SIGNIFICANT_DRIFT"
     },
     {
       "feature": "customer_return_rate",
-      "psi": 7.9669,
-      "ks_statistic": 0.9865,
+      "psi": 0.1193,
+      "ks_statistic": 0.0914,
       "ks_pvalue": 0.0,
-      "status": "SIGNIFICANT_DRIFT"
+      "status": "MODERATE_DRIFT"
     },
     {
       "feature": "customer_chargeback_rate",
       "psi": 0.0,
-      "ks_statistic": 0.9814,
-      "ks_pvalue": 0.0,
+      "ks_statistic": 0.0263,
+      "ks_pvalue": 0.504379,
       "status": "STABLE"
     },
     {
       "feature": "current_vs_average_order_ratio",
-      "psi": 8.282,
-      "ks_statistic": 0.6366,
-      "ks_pvalue": 2e-06,
-      "status": "SIGNIFICANT_DRIFT"
+      "psi": 0.0092,
+      "ks_statistic": 0.0476,
+      "ks_pvalue": 0.023774,
+      "status": "STABLE"
     },
     {
       "feature": "orders_last_24h",
-      "psi": 8.1631,
-      "ks_statistic": 0.9947,
-      "ks_pvalue": 0.0,
-      "status": "SIGNIFICANT_DRIFT"
+      "psi": 0.0072,
+      "ks_statistic": 0.0355,
+      "ks_pvalue": 0.168108,
+      "status": "STABLE"
     }
   ],
-  "prediction_score_drift": {
-    "score_psi": 0.0,
-    "ks_statistic": 1.0,
-    "ks_pvalue": 0.0,
-    "status": "STABLE"
-  }
+  "prediction_score_drift": null
 }

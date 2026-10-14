@@ -1,19 +1,85 @@
 {
   "model_name": "FraudModel (XGBoost Early-Stopping)",
   "evaluation_dataset": "Held-Out Test Set (15% Chronological Split)",
-  "operating_threshold": 0.3,
+  "operating_threshold": 0.35,
   "cost_optimal_threshold": 0.15,
-  "total_test_records": 7500,
-  "actual_high_risk_positives": 1619,
-  "accuracy": 0.9017,
-  "precision": 0.7464,
-  "recall": 0.8252,
-  "f1_score": 0.7838,
-  "pr_auc": 0.8801,
+  "policy_decision": {
+    "cost_minimizing_threshold": 0.15,
+    "operational_threshold": 0.35,
+    "policy_rationale": "The unconstrained cost-minimizing threshold is 0.15, but produces 332 false positives (16.8% FPR) and generates 826 review interruptions. To protect legitimate customer experience and quantify fraud analyst workload, production policy operates at 0.35. This policy produces 194 (9.8% FPR) while preserving 87.9% fraud capture and delivering INR 845,440 in net savings.",
+    "tradeoff_comparison": {
+      "at_cost_minimizing_cutoff": {
+        "threshold": 0.15,
+        "precision": 0.5981,
+        "recall": 0.9338,
+        "false_positives": 332,
+        "false_positive_rate": 0.1684,
+        "manual_reviews_generated": 826,
+        "net_savings": 855360.0
+      },
+      "at_operational_policy_cutoff": {
+        "threshold": 0.35,
+        "precision": 0.7056,
+        "recall": 0.879,
+        "false_positives": 194,
+        "false_positive_rate": 0.0984,
+        "manual_reviews_generated": 659,
+        "net_savings": 845440.0
+      }
+    },
+    "held_out_comparison": {
+      "cost_minimizing": {
+        "threshold": 0.15,
+        "precision": 0.6237,
+        "recall": 0.932,
+        "f1_score": 0.7473,
+        "false_positive_rate": 0.1547,
+        "false_negative_rate": 0.068,
+        "fraud_captured_pct": 93.2,
+        "manual_reviews_count": 2418,
+        "fp_cost": 273000.0,
+        "fn_cost": 220000.0,
+        "expected_cost": 589720.0,
+        "net_savings": 2646280.0,
+        "true_positives": 1508,
+        "false_positives": 910,
+        "false_negatives": 110
+      },
+      "operational": {
+        "threshold": 0.35,
+        "precision": 0.7125,
+        "recall": 0.8622,
+        "f1_score": 0.7802,
+        "false_positive_rate": 0.0957,
+        "false_negative_rate": 0.1378,
+        "fraud_captured_pct": 86.2,
+        "manual_reviews_count": 1958,
+        "fp_cost": 168900.0,
+        "fn_cost": 446000.0,
+        "expected_cost": 693220.0,
+        "net_savings": 2542780.0,
+        "true_positives": 1395,
+        "false_positives": 563,
+        "false_negatives": 223
+      }
+    }
+  },
+  "total_test_records": 7499,
+  "actual_high_risk_positives": 1618,
+  "accuracy": 0.8952,
+  "precision": 0.7125,
+  "recall": 0.8622,
+  "f1_score": 0.7802,
+  "pr_auc": 0.8773,
   "roc_auc": 0.96,
-  "brier_score": 0.063,
-  "false_positive_rate": 0.0772,
-  "false_negative_rate": 0.1748,
+  "brier_score": 0.0628,
+  "calibration": {
+    "expected_calibration_error_ece": 0.012095740360029892,
+    "maximum_calibration_error_mce": 0.06942648002019167,
+    "calibration_quality": "WELL_CALIBRATED"
+  },
+  "false_positive_rate": 0.0957,
+  "false_negative_rate": 0.1378,
   "confusion_matrix": {
     "layout": {
       "top_label": "ACTUAL",
@@ -25,19 +91,19 @@
     },
     "matrix": [
       [
-        5427,
-        283
+        5318,
+        223
       ],
       [
-        454,
-        1336
+        563,
+        1395
       ]
     ],
-    "true_negatives": 5427,
-    "false_positives": 454,
-    "false_negatives": 283,
-    "true_positives": 1336,
-    "total_evaluated": 7500
+    "true_negatives": 5318,
+    "false_positives": 563,
+    "false_negatives": 223,
+    "true_positives": 1395,
+    "total_evaluated": 7499
   },
   "financial_impact": {
     "currency": "INR (\u20b9)",
@@ -45,44 +111,27 @@
     "false_positive_cost": 300.0,
     "manual_review_cost": 40.0,
     "false_negative_cost": 2000.0,
-    "true_positives": 1336,
-    "true_negatives": 5427,
-    "false_positives": 454,
-    "false_negatives": 283,
-    "reviews_count": 446,
-    "loss_without_model": 3238000.0,
-    "cost_with_model": 720040.0,
-    "fraud_losses_prevented": 2672000.0,
-    "fp_cost": 136200.0,
-    "fn_cost": 566000.0,
-    "manual_review_cost_total": 17840.0,
-    "total_error_cost": 702200.0,
-    "net_savings": 2517960.0,
-    "roi_percentage": 349.7,
-    "cost_per_order": 96.01
-  },
-  "cost_optimal_metrics": {
-    "threshold": 0.15,
-    "precision": 0.6246,
-    "recall": 0.9302,
-    "f1_score": 0.7474,
-    "false_positive_rate": 0.1539,
-    "false_negative_rate": 0.0698,
-    "fraud_captured_pct": 93.0,
-    "manual_reviews_count": 2411,
-    "fp_cost": 271500.0,
-    "fn_cost": 226000.0,
-    "expected_cost": 593940.0,
-    "net_savings": 2644060.0,
-    "true_positives": 1506,
-    "false_positives": 905,
-    "false_negatives": 113
+    "true_positives": 1395,
+    "true_negatives": 5318,
+    "false_positives": 563,
+    "false_negatives": 223,
+    "reviews_count": 1958,
+    "loss_without_model": 3236000.0,
+    "cost_with_model": 693220.0,
+    "fraud_losses_prevented": 2790000.0,
+    "fp_cost": 168900.0,
+    "fn_cost": 446000.0,
+    "manual_review_cost_total": 78320.0,
+    "total_error_cost": 614900.0,
+    "net_savings": 2542780.0,
+    "roi_percentage": 366.81,
+    "cost_per_order": 92.44
   },
   "risk_bands": {
-    "low_risk_max": 0.39,
-    "medium_risk_min": 0.39,
+    "low_risk_max": 0.35,
+    "medium_risk_min": 0.35,
     "medium_risk_max": 0.7,
     "high_risk_min": 0.7
   },
-  "evaluation_timestamp": "2026-10-14T02:02:38.977336"
+  "evaluation_timestamp": "2026-10-14T02:42:00.322623"
 }

@@ -74,9 +74,9 @@ class RiskSentinelExplainer:
         df_raw = pd.DataFrame([raw_record])
         df_engineered = self.feature_engineer.transform(df_raw)
         X_trans = self.preprocessor.transform(df_engineered)
-        
+
         contributions = []
-        
+
         # Method 1: If linear model (Logistic Regression)
         if hasattr(self.model, "coef_"):
             coefs = self.model.coef_[0]
@@ -86,10 +86,10 @@ class RiskSentinelExplainer:
                     val = float(x_row[idx])
                     weight = float(coefs[idx])
                     impact = round(val * weight, 4)
-                    
+
                     clean_name = feat_name.replace("cat__", "").replace("num__", "")
                     readable = FEATURE_DESCRIPTIONS.get(clean_name, clean_name.replace("_", " ").title())
-                    
+
                     contributions.append({
                         "feature": clean_name,
                         "readable_name": readable,
@@ -101,15 +101,15 @@ class RiskSentinelExplainer:
             # Method 2: Tree-based ensemble / Gradient Boosting
             x_row = X_trans[0]
             importances = getattr(self.model, "feature_importances_", np.ones(X_trans.shape[1]) / X_trans.shape[1])
-            
+
             for idx, feat_name in enumerate(self.feature_names):
                 val = float(x_row[idx])
                 imp = float(importances[idx]) if idx < len(importances) else 0.01
                 impact = round(val * imp * 2.8, 4)
-                
+
                 clean_name = feat_name.replace("cat__", "").replace("num__", "")
                 readable = FEATURE_DESCRIPTIONS.get(clean_name, clean_name.replace("_", " ").title())
-                
+
                 contributions.append({
                     "feature": clean_name,
                     "readable_name": readable,
@@ -121,16 +121,17 @@ class RiskSentinelExplainer:
         contributions.sort(key=lambda x: abs(x["impact"]), reverse=True)
         top_positive = [c for c in contributions if c["impact"] > 0][:6]
         top_negative = [c for c in contributions if c["impact"] < 0][:5]
-        
+
         # Risk tier assignment (Low: 0-39, Medium: 40-69, High: 70-100)
         risk_score_int = int(round(risk_probability * 100.0))
-        
-        if risk_score_int < 40:
+
+        policy = threshold_config or {}
+        if risk_probability < policy.get("operating_threshold", 0.35):
             risk_level = "LOW"
             recommended_action = "Approve normally"
             requires_human_review = False
             review_reason = None
-        elif risk_score_int >= 70:
+        elif risk_probability >= policy.get("high_risk_min", 0.70):
             risk_level = "HIGH"
             recommended_action = "Hold for manual review before shipment/refund"
             requires_human_review = True
@@ -151,7 +152,7 @@ class RiskSentinelExplainer:
         val_ratio = float(raw_record.get("current_vs_average_order_ratio", 1.0))
         dev_custs = float(raw_record.get("customers_from_device", 1))
         bill_ship_match = float(raw_record.get("billing_shipping_match", 1))
-        
+
         if c_prev_cb >= 1:
             risk_factors_narrative.append(f"Customer has {int(c_prev_cb)} previous chargeback record(s)")
         if c_ret_rate > 0.45 and c_prev_orders >= 3:

@@ -45,3 +45,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+.validation-tmp*/
+data/benchmark/creditcard_full.csv
+data/benchmark/*.download

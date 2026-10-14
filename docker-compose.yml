@@ -54,7 +54,7 @@ services:
       postgres:
         condition: service_healthy
       ml-service:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:

@@ -1,0 +1,7 @@
+{
+  "benchmark_type": "Synthetic Degraded Signal Stress-Test (High Class Overlap & 5% Label Noise)",
+  "samples": 3000,
+  "pr_auc": 0.1603,
+  "roc_auc": 0.5881,
+  "interpretation": "Evaluates defensive model performance under severe signal degradation and label corruption."
+}
